@@ -194,7 +194,7 @@ export default function LeadsGrowthChart({ data, loading = false, height = 300 }
           color: '#a0a9c0',
           font: {
             size: 12,
-            weight: '500'
+            weight: 500
           }
         }
       },

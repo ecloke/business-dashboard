@@ -1,5 +1,63 @@
+# Python
 venv
 venv_linux
 __pycache__
 .ruff_cache
 .pytest_cache
+
+# Next.js
+.next/
+out/
+dist/
+build/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Optional npm cache directory
+.npm
+
+# TypeScript build
+tsconfig.tsbuildinfo
+
+# Testing
+coverage/
+
+# Images that aren't needed for deployment
+image*.png
+*.jpg
+*.jpeg
+dashboard-changes.txt
+mapping.txt
+formatted_contacts.json
+initial_data.csv

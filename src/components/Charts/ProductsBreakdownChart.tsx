@@ -149,7 +149,7 @@ export default function ProductsBreakdownChart({ data, loading = false, height =
           color: '#a0a9c0',
           font: {
             size: 12,
-            weight: '500'
+            weight: 500
           }
         }
       },
@@ -171,7 +171,7 @@ export default function ProductsBreakdownChart({ data, loading = false, height =
           color: '#a0a9c0',
           font: {
             size: 12,
-            weight: '500'
+            weight: 500
           }
         }
       }

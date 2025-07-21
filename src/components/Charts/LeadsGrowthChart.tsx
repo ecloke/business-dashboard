@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { Card, Select, DatePicker, Row, Col, Skeleton } from 'antd';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -14,7 +13,6 @@ import {
 } from 'chart.js';
 import { DashboardData, Lead } from '../../lib/types';
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, parseISO, isWithinInterval } from 'date-fns';
-import type { Dayjs } from 'dayjs';
 
 ChartJS.register(
   CategoryScale,
@@ -26,9 +24,6 @@ ChartJS.register(
   Legend,
   Filler
 );
-
-const { RangePicker } = DatePicker;
-const { Option } = Select;
 
 interface LeadsGrowthChartProps {
   data: DashboardData | null;
@@ -52,17 +47,26 @@ export default function LeadsGrowthChart({ data, loading = false, height = 300 }
 
   const currentDateRange = dateRange || defaultDateRange;
 
-  // Filter leads by date range
+  // Filter leads by date range using Malaysian timezone (consistent with other charts)
   const filteredLeads = useMemo(() => {
     if (!data?.leads) return [];
     
+    const malaysianOffset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+    
+    // Convert date range to Malaysian timezone date strings for comparison
+    const startMalaysian = new Date(currentDateRange[0].getTime() + malaysianOffset);
+    const endMalaysian = new Date(currentDateRange[1].getTime() + malaysianOffset);
+    const startDateStr = startMalaysian.toISOString().split('T')[0]; // YYYY-MM-DD
+    const endDateStr = endMalaysian.toISOString().split('T')[0]; // YYYY-MM-DD
+    
     return data.leads.filter(lead => {
       try {
-        const leadDate = parseISO(lead.createDate);
-        return isWithinInterval(leadDate, {
-          start: startOfDay(currentDateRange[0]),
-          end: endOfDay(currentDateRange[1])
-        });
+        const leadDateUTC = new Date(lead.createDate);
+        const leadDateMalaysian = new Date(leadDateUTC.getTime() + malaysianOffset);
+        const leadDateStr = leadDateMalaysian.toISOString().split('T')[0]; // YYYY-MM-DD
+        
+        // Compare date strings: leadDate >= startDate && leadDate <= endDate
+        return leadDateStr >= startDateStr && leadDateStr <= endDateStr;
       } catch (error) {
         return false;
       }
@@ -126,15 +130,17 @@ export default function LeadsGrowthChart({ data, loading = false, height = 300 }
         {
           label: 'Leads',
           data: leadCounts,
-          borderColor: '#1890ff',
-          backgroundColor: 'rgba(24, 144, 255, 0.1)',
+          borderColor: '#3b82f6',
+          backgroundColor: 'rgba(59, 130, 246, 0.1)',
           fill: true,
           tension: 0.4,
-          pointBackgroundColor: '#1890ff',
+          pointBackgroundColor: '#3b82f6',
           pointBorderColor: '#ffffff',
           pointBorderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
+          pointHoverBackgroundColor: '#3b82f6',
+          pointHoverBorderColor: '#ffffff',
         }
       ]
     };
@@ -151,12 +157,12 @@ export default function LeadsGrowthChart({ data, loading = false, height = 300 }
         display: false,
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
         titleColor: '#ffffff',
         bodyColor: '#ffffff',
-        borderColor: '#1890ff',
+        borderColor: '#3b82f6',
         borderWidth: 1,
-        cornerRadius: 6,
+        cornerRadius: 8,
         displayColors: false,
         callbacks: {
           title: (context: any) => {
@@ -173,20 +179,35 @@ export default function LeadsGrowthChart({ data, loading = false, height = 300 }
       y: {
         beginAtZero: true,
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: 'rgba(255, 255, 255, 0.1)',
         },
         ticks: {
           stepSize: 1,
-          color: '#666666',
+          color: '#a0a9c0',
+          font: {
+            size: 12
+          }
+        },
+        title: {
+          display: true,
+          text: 'Number of Leads',
+          color: '#a0a9c0',
+          font: {
+            size: 12,
+            weight: '500'
+          }
         }
       },
       x: {
         grid: {
-          color: 'rgba(0, 0, 0, 0.1)',
+          color: 'rgba(255, 255, 255, 0.05)',
         },
         ticks: {
-          color: '#666666',
+          color: '#a0a9c0',
           maxRotation: 45,
+          font: {
+            size: 11
+          }
         }
       }
     },
@@ -198,89 +219,132 @@ export default function LeadsGrowthChart({ data, loading = false, height = 300 }
 
   if (loading) {
     return (
-      <Card 
-        title="Leads Growth Over Time" 
-        variant="borderless"
-        style={{ 
-          height: height + 100,
-          borderRadius: '8px',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-        }}
-      >
-        <Skeleton.Input active style={{ width: '100%', height: height }} />
-      </Card>
+      <div className="modern-card">
+        <div className="flex items-center justify-between mb-6">
+          <div className="w-48 h-6 skeleton"></div>
+          <div className="flex gap-3">
+            <div className="w-24 h-8 skeleton rounded-lg"></div>
+            <div className="w-48 h-8 skeleton rounded-lg"></div>
+          </div>
+        </div>
+        <div className="w-full skeleton" style={{ height: `${height}px` }}></div>
+        <div className="mt-4 text-center">
+          <div className="w-64 h-4 skeleton mx-auto"></div>
+        </div>
+      </div>
     );
   }
 
   if (!data) {
     return (
-      <Card 
-        title="Leads Growth Over Time" 
-        variant="borderless"
-        style={{ 
-          height: height + 100,
-          borderRadius: '8px',
-          boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-        }}
-      >
+      <div className="modern-card">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="title-small">Leads Growth Over Time</h3>
+          <div className="flex gap-3">
+            <select className="modern-select" value={grouping} onChange={(e) => setGrouping(e.target.value as GroupingType)}>
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+              <option value="monthly">Monthly</option>
+            </select>
+            <input 
+              type="date" 
+              className="modern-input"
+              placeholder="Date Range"
+            />
+          </div>
+        </div>
         <div style={{ 
           height: `${height}px`, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          color: '#8c8c8c',
+          color: 'var(--text-muted)',
           textAlign: 'center'
         }}>
           No data available
         </div>
-      </Card>
+      </div>
     );
   }
 
   return (
-    <Card 
-      title="Leads Growth Over Time" 
-      variant="borderless"
-      style={{ 
-        height: height + 100,
-        borderRadius: '8px',
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-      }}
-      extra={
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          <Select
+    <div className="modern-card fade-in">
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="title-small">Leads Growth Over Time</h3>
+        <div className="flex gap-3">
+          <select
             value={grouping}
-            onChange={setGrouping}
-            style={{ width: 100, minWidth: 100 }}
-            size="small"
-            placeholder="Group by"
+            onChange={(e) => setGrouping(e.target.value as GroupingType)}
+            className="modern-select"
           >
-            <Option value="daily">Daily</Option>
-            <Option value="weekly">Weekly</Option>
-            <Option value="monthly">Monthly</Option>
-          </Select>
-          <RangePicker
-            value={dateRange ? [dateRange[0] as any, dateRange[1] as any] : null}
-            onChange={(dates) => {
-              if (dates && dates[0] && dates[1]) {
-                setDateRange([(dates[0] as any).toDate(), (dates[1] as any).toDate()]);
-              } else {
-                setDateRange(null);
-              }
-            }}
-            size="small"
-            style={{ width: 200, minWidth: 200 }}
-            placeholder={['Start date', 'End date']}
-          />
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={currentDateRange[0].toISOString().split('T')[0]}
+              onChange={(e) => {
+                const newStart = new Date(e.target.value);
+                setDateRange([newStart, currentDateRange[1]]);
+              }}
+              className="modern-input text-sm"
+              style={{ width: '140px' }}
+            />
+            <input
+              type="date"
+              value={currentDateRange[1].toISOString().split('T')[0]}
+              onChange={(e) => {
+                const newEnd = new Date(e.target.value);
+                setDateRange([currentDateRange[0], newEnd]);
+              }}
+              className="modern-input text-sm"
+              style={{ width: '140px' }}
+            />
+          </div>
         </div>
-      }
-    >
-      <div style={{ height }}>
+      </div>
+      
+      <div style={{ height: `${height}px`, marginBottom: '1rem' }}>
         <Line data={chartData} options={options} />
       </div>
-      <div style={{ marginTop: '12px', textAlign: 'center', color: '#666', fontSize: '12px' }}>
+      
+      <div className="text-center text-secondary text-sm">
         Showing {filteredLeads.length} leads from {format(currentDateRange[0], 'MMM dd, yyyy')} to {format(currentDateRange[1], 'MMM dd, yyyy')}
       </div>
-    </Card>
+
+      {/* Summary stats */}
+      <div style={{ 
+        marginTop: '1rem', 
+        padding: '1rem',
+        background: 'var(--bg-glass)',
+        borderRadius: '8px',
+        fontSize: '12px',
+        color: 'var(--text-secondary)',
+        backdropFilter: 'blur(10px)'
+      }}>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="text-center">
+            <div className="text-lg font-semibold text-white mb-1">
+              {filteredLeads.length}
+            </div>
+            <div>Filtered Leads</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-semibold text-green-400 mb-1">
+              {Math.max(...chartData.datasets[0].data)}
+            </div>
+            <div>Peak Day</div>
+          </div>
+          <div className="text-center">
+            <div className="text-lg font-semibold text-blue-400 mb-1">
+              {filteredLeads.length > 0 ? Math.round(filteredLeads.length / chartData.labels.length) : 0}
+            </div>
+            <div>Daily Average</div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

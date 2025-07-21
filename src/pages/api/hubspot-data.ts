@@ -70,7 +70,7 @@ export default async function handler(
     try {
       if (process.env.HUBSPOT_ACCESS_TOKEN) {
         console.log('[API] Fetching data from HubSpot API...');
-        hubspotLeads = await fetchLatestContacts();
+        hubspotLeads = await fetchLatestContacts(); // Fetch all contacts without date filter
         console.log(`[API] Successfully fetched ${hubspotLeads?.length || 0} leads from HubSpot`);
       } else {
         console.warn('[API] HubSpot token not configured, skipping API fetch');

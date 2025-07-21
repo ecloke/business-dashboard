@@ -1,19 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Layout, Row, Col, Typography, Alert, Spin } from 'antd';
-import { DashboardOutlined } from '@ant-design/icons';
 import MetricsCards from './MetricsCards';
 import TrafficSourceChart from './Charts/TrafficSourceChart';
 import ProductsBreakdownChart from './Charts/ProductsBreakdownChart';
 import LeadStatusChart from './Charts/LeadStatusChart';
 import LeadsGrowthChart from './Charts/LeadsGrowthChart';
-import RecentLeadsTable from './Tables/RecentLeadsTable';
 import RefreshButton from './RefreshButton';
 import { DashboardData, Lead } from '../lib/types';
 import { processCSVData } from '../lib/dataProcessor';
 import initialData from '../data/initial_data.json';
-
-const { Content } = Layout;
-const { Title } = Typography;
 
 interface DashboardProps {
   className?: string;
@@ -100,165 +94,110 @@ export default function Dashboard({ className }: DashboardProps) {
 
   if (loading) {
     return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '50vh',
-        flexDirection: 'column',
-        gap: '16px'
-      }}>
-        <Spin size="large" />
-        <div style={{ color: '#8c8c8c' }}>Loading dashboard...</div>
+      <div className="dashboard-container">
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="text-center">
+            <div className="loading-spinner mx-auto mb-4"></div>
+            <div className="text-secondary">Loading dashboard...</div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <Layout className={className} style={{ minHeight: '100vh', background: '#f5f5f5' }}>
-      <Content style={{ 
-        padding: '24px 24px 0', 
-        background: '#f5f5f5',
-        minHeight: '100vh'
-      }}>
-        {/* Header */}
-        <div style={{ 
-          marginBottom: '24px',
-          padding: '0 0 24px 0',
-          borderBottom: '1px solid #f0f0f0',
-          background: 'transparent'
-        }}>
-          <div style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            flexWrap: 'wrap',
-            gap: '16px'
-          }}>
-            <div>
-              <Title 
-                level={2} 
-                style={{ 
-                  margin: '0 0 8px 0', 
-                  color: '#262626',
-                  fontSize: '24px',
-                  fontWeight: 600,
-                  lineHeight: '32px'
-                }}
-              >
-                HubSpot Lead Analytics
-              </Title>
-              {lastUpdated && (
-                <div style={{ 
-                  color: '#8c8c8c', 
-                  fontSize: '14px',
-                  lineHeight: '22px'
-                }}>
-                  Last updated: {lastUpdated.toLocaleString('en-MY', {
-                    timeZone: 'Asia/Kuala_Lumpur',
-                    year: 'numeric',
-                    month: 'short',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })} MYT
-                </div>
-              )}
-            </div>
-            
-            <RefreshButton 
-              onRefresh={() => refreshData(true)}
-              loading={refreshing}
-              lastUpdated={lastUpdated}
-            />
-          </div>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <Alert
-            message="Data Loading Notice"
-            description={error}
-            type="warning"
-            showIcon
-            closable
-            style={{ marginBottom: '24px' }}
-            onClose={() => setError(null)}
-          />
-        )}
-
-        {/* Metrics Cards Section */}
-        <div style={{ marginBottom: '24px' }}>
-          <MetricsCards data={dashboardData} loading={refreshing} />
-        </div>
-
-        {/* Leads Growth Chart Section */}
-        <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
-          <Col xs={24} lg={16}>
-            <LeadsGrowthChart 
-              data={dashboardData} 
-              loading={refreshing} 
-              height={300}
-            />
-          </Col>
-          <Col xs={24} lg={8}>
-            <TrafficSourceChart 
-              data={dashboardData} 
-              loading={refreshing} 
-              height={300}
-            />
-          </Col>
-        </Row>
-
-        {/* Analytics Charts Section */}
-        <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
-          <Col xs={24} lg={12}>
-            <ProductsBreakdownChart 
-              data={dashboardData} 
-              loading={refreshing} 
-              height={300}
-            />
-          </Col>
-          <Col xs={24} lg={12}>
-            <LeadStatusChart 
-              data={dashboardData} 
-              loading={refreshing} 
-              height={300}
-            />
-          </Col>
-        </Row>
-
-        {/* Recent Leads Table Section */}
-        <Row gutter={[24, 24]} style={{ marginBottom: '24px' }}>
-          <Col span={24}>
-            <RecentLeadsTable 
-              leads={leads} 
-              loading={refreshing}
-              pageSize={10}
-            />
-          </Col>
-        </Row>
-
-        {/* Footer Info */}
-        <div style={{ 
-          marginTop: '32px',
-          padding: '16px',
-          background: '#ffffff',
-          borderRadius: '8px',
-          border: '1px solid #f0f0f0',
-          textAlign: 'center',
-          color: '#8c8c8c',
-          fontSize: '12px'
-        }}>
-          <div style={{ marginBottom: '4px' }}>
-            Dashboard powered by HubSpot CRM • Real-time lead analytics for Malaysian market
-          </div>
+    <div className="dashboard-container">
+      {/* Header */}
+      <div className="dashboard-header">
+        <div className="flex items-start justify-between">
           <div>
-            Data automatically synced every 10 minutes • 
-            {dashboardData?.totalCount || 0} total leads tracked
+            <h1 className="title-large text-gradient">
+              HubSpot Lead Analytics
+            </h1>
+            {lastUpdated && (
+              <p className="text-secondary text-sm">
+                Last updated: {lastUpdated.toLocaleString('en-MY', {
+                  timeZone: 'Asia/Kuala_Lumpur',
+                  year: 'numeric',
+                  month: 'short',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })} MYT
+              </p>
+            )}
+          </div>
+          
+          <RefreshButton 
+            onRefresh={() => refreshData(true)}
+            loading={refreshing}
+            lastUpdated={lastUpdated}
+          />
+        </div>
+      </div>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="modern-card mb-6" style={{ 
+          background: 'rgba(239, 68, 68, 0.1)', 
+          borderColor: 'rgba(239, 68, 68, 0.3)' 
+        }}>
+          <div className="flex items-center gap-3">
+            <div className="text-red-400 text-xl">⚠️</div>
+            <div>
+              <div className="text-red-300 font-medium">Data Loading Notice</div>
+              <div className="text-red-200 text-sm mt-1">{error}</div>
+            </div>
+            <button 
+              onClick={() => setError(null)}
+              className="ml-auto text-red-300 hover:text-red-100 transition-colors"
+            >
+              ✕
+            </button>
           </div>
         </div>
-      </Content>
-    </Layout>
+      )}
+
+      {/* Metrics Cards Section */}
+      <MetricsCards data={dashboardData} loading={refreshing} />
+
+      {/* Charts Section */}
+      <div className="grid-2 mb-8">
+        <LeadsGrowthChart 
+          data={dashboardData} 
+          loading={refreshing} 
+          height={320}
+        />
+        <LeadStatusChart 
+          data={dashboardData} 
+          loading={refreshing} 
+          height={320}
+        />
+      </div>
+
+      <div className="grid-2 mb-8">
+        <TrafficSourceChart 
+          data={dashboardData} 
+          loading={refreshing} 
+          height={300}
+        />
+        <ProductsBreakdownChart 
+          data={dashboardData} 
+          loading={refreshing} 
+          height={300}
+        />
+      </div>
+
+
+      {/* Footer Info */}
+      <div className="modern-card text-center text-secondary">
+        <div className="text-sm mb-2">
+          This dashboard is built by an AI
+        </div>
+        <div className="text-xs">
+          {dashboardData?.totalCount || 0} total leads tracked
+        </div>
+      </div>
+    </div>
   );
 }

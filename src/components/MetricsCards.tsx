@@ -1,14 +1,4 @@
 import React from 'react';
-import { Row, Col, Card, Statistic, Skeleton, Tooltip } from 'antd';
-import { 
-  UserOutlined, 
-  RiseOutlined, 
-  TrophyOutlined, 
-  CloseCircleOutlined,
-  InfoCircleOutlined,
-  CalendarOutlined,
-  CheckCircleOutlined
-} from '@ant-design/icons';
 import { DashboardData } from '../lib/types';
 
 interface MetricsCardsProps {
@@ -16,196 +6,114 @@ interface MetricsCardsProps {
   loading?: boolean;
 }
 
-export default function MetricsCards({ data, loading = false }: MetricsCardsProps) {
-  // Calculate metrics from data
-  const todaysLeads = data?.todaysLeads || 0;
-  const topOriginalSource = getTopOriginalTrafficSource(data);
-  const wonLeads = data?.wonLeads || 0;
-  const lostLeads = data?.lostLeads || 0;
-  const topProduct = getTopProduct(data);
+interface MetricCardProps {
+  title: string;
+  value: string | number;
+  subtitle: string;
+  gradientClass: string;
+  icon: string;
+  loading?: boolean;
+}
 
+function MetricCard({ title, value, subtitle, gradientClass, icon, loading = false }: MetricCardProps) {
   if (loading) {
     return (
-      <Row gutter={[24, 16]}>
-        {[...Array(5)].map((_, index) => (
-          <Col xs={24} sm={12} lg={6} xl={4.8} key={index}>
-            <Card 
-              variant="borderless"
-              style={{ 
-                borderRadius: '8px',
-                boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-              }}
-            >
-              <Skeleton.Input active style={{ width: '100%', height: '80px' }} />
-            </Card>
-          </Col>
-        ))}
-      </Row>
+      <div className={`modern-card gradient-card ${gradientClass} fade-in`}>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="w-24 h-4 skeleton mb-2"></div>
+            <div className="w-16 h-8 skeleton mb-1"></div>
+            <div className="w-20 h-3 skeleton"></div>
+          </div>
+          <div className="w-12 h-12 skeleton rounded-full"></div>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Row gutter={[24, 16]}>
-      {/* Today's Leads */}
-      <Col xs={24} sm={12} lg={6} xl={4.8}>
-        <Card 
-          variant="borderless"
-          hoverable
-          style={{ 
-            height: '100%',
-            borderRadius: '8px',
-            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-          }}
-        >
-          <Statistic
-            title={
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CalendarOutlined style={{ color: '#1890ff' }} />
-                Today's Leads
-                <Tooltip title="Number of leads created today">
-                  <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: '12px' }} />
-                </Tooltip>
-              </span>
-            }
-            value={todaysLeads}
-            valueStyle={{ color: '#1890ff', fontSize: '28px', fontWeight: '600' }}
-            suffix={
-              <div style={{ fontSize: '12px', color: '#1890ff', marginTop: '4px' }}>
-                New Today
-              </div>
-            }
-          />
-        </Card>
-      </Col>
+    <div className={`modern-card gradient-card ${gradientClass} fade-in group cursor-pointer`}>
+      <div className="flex items-start justify-between">
+        <div className="flex-1">
+          <h3 className="text-white/80 text-sm font-medium mb-2 group-hover:text-white transition-colors">
+            {title}
+          </h3>
+          <div className="text-3xl font-bold text-white mb-1 group-hover:scale-105 transition-transform">
+            {value}
+          </div>
+          <p className="text-white/70 text-xs font-medium group-hover:text-white/90 transition-colors">
+            {subtitle}
+          </p>
+        </div>
+        <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center text-white text-xl group-hover:bg-white/30 transition-colors backdrop-blur-sm">
+          {icon}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-      {/* Top Traffic Source (Original) */}
-      <Col xs={24} sm={12} lg={6} xl={4.8}>
-        <Card 
-          variant="borderless"
-          hoverable
-          style={{ 
-            height: '100%',
-            borderRadius: '8px',
-            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-          }}
-        >
-          <Statistic
-            title={
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <RiseOutlined style={{ color: '#52c41a' }} />
-                Top Traffic Source
-                <Tooltip title="Highest performing original traffic source by lead count">
-                  <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: '12px' }} />
-                </Tooltip>
-              </span>
-            }
-            value={`${topOriginalSource.percentage}%`}
-            valueStyle={{ color: '#52c41a', fontSize: '28px', fontWeight: '600' }}
-            suffix={
-              <div style={{ fontSize: '12px', color: '#52c41a', marginTop: '4px' }}>
-                {topOriginalSource.name} ({topOriginalSource.count} leads)
-              </div>
-            }
-          />
-        </Card>
-      </Col>
+export default function MetricsCards({ data, loading = false }: MetricsCardsProps) {
+  // Calculate metrics from data
+  const todaysLeads = data?.todaysLeads || 0;
+  const totalLeads = data?.totalCount || 0;
+  const topOriginalSource = getTopOriginalTrafficSource(data);
+  const wonLeads = data?.leadStatusBreakdown?.['Won'] || data?.wonLeads || 0;
+  const lostLeads = data?.leadStatusBreakdown?.['Lost'] || data?.lostLeads || 0;
+  const topProduct = getTopProduct(data);
 
-      {/* Won Leads */}
-      <Col xs={24} sm={12} lg={6} xl={4.8}>
-        <Card 
-          variant="borderless"
-          hoverable
-          style={{ 
-            height: '100%',
-            borderRadius: '8px',
-            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-          }}
-        >
-          <Statistic
-            title={
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CheckCircleOutlined style={{ color: '#52c41a' }} />
-                Won Leads
-                <Tooltip title="Number of leads with WON status">
-                  <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: '12px' }} />
-                </Tooltip>
-              </span>
-            }
-            value={wonLeads}
-            valueStyle={{ color: '#52c41a', fontSize: '28px', fontWeight: '600' }}
-            suffix={
-              <div style={{ fontSize: '12px', color: '#52c41a', marginTop: '4px' }}>
-                Successful
-              </div>
-            }
-          />
-        </Card>
-      </Col>
+  const metrics = [
+    {
+      title: "Total Leads",
+      value: totalLeads,
+      subtitle: "All leads tracked",
+      gradientClass: "gradient-card",
+      icon: "📈"
+    },
+    {
+      title: "Today's Leads",
+      value: todaysLeads,
+      subtitle: "New leads today",
+      gradientClass: "gradient-card-2",
+      icon: "📊"
+    },
+    {
+      title: "Top Traffic Source",
+      value: `${topOriginalSource.percentage}%`,
+      subtitle: `${topOriginalSource.name} (${topOriginalSource.count} leads)`,
+      gradientClass: "gradient-card-3",
+      icon: "🚀"
+    },
+    {
+      title: "Won Leads",
+      value: wonLeads,
+      subtitle: "Successful conversions",
+      gradientClass: "gradient-card-4",
+      icon: "✅"
+    },
+    {
+      title: "Top Product",
+      value: topProduct.count,
+      subtitle: topProduct.name,
+      gradientClass: "gradient-card-5",
+      icon: "🏆"
+    }
+  ];
 
-      {/* Lost Leads */}
-      <Col xs={24} sm={12} lg={6} xl={4.8}>
-        <Card 
-          variant="borderless"
-          hoverable
-          style={{ 
-            height: '100%',
-            borderRadius: '8px',
-            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-          }}
-        >
-          <Statistic
-            title={
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <CloseCircleOutlined style={{ color: '#ff4d4f' }} />
-                Lost Leads
-                <Tooltip title="Number of leads with LOST status">
-                  <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: '12px' }} />
-                </Tooltip>
-              </span>
-            }
-            value={lostLeads}
-            valueStyle={{ color: '#ff4d4f', fontSize: '28px', fontWeight: '600' }}
-            suffix={
-              <div style={{ fontSize: '12px', color: '#ff4d4f', marginTop: '4px' }}>
-                Unsuccessful
-              </div>
-            }
-          />
-        </Card>
-      </Col>
-
-      {/* Top Products */}
-      <Col xs={24} sm={12} lg={6} xl={4.8}>
-        <Card 
-          variant="borderless"
-          hoverable
-          style={{ 
-            height: '100%',
-            borderRadius: '8px',
-            boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-          }}
-        >
-          <Statistic
-            title={
-              <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <TrophyOutlined style={{ color: '#faad14' }} />
-                Top Product
-                <Tooltip title="Most popular product/message from leads">
-                  <InfoCircleOutlined style={{ color: '#8c8c8c', fontSize: '12px' }} />
-                </Tooltip>
-              </span>
-            }
-            value={topProduct.count}
-            valueStyle={{ color: '#faad14', fontSize: '28px', fontWeight: '600' }}
-            suffix={
-              <div style={{ fontSize: '12px', color: '#faad14', marginTop: '4px' }}>
-                {topProduct.name}
-              </div>
-            }
-          />
-        </Card>
-      </Col>
-    </Row>
+  return (
+    <div className="grid-5 mb-8">
+      {metrics.map((metric, index) => (
+        <MetricCard
+          key={index}
+          title={metric.title}
+          value={metric.value}
+          subtitle={metric.subtitle}
+          gradientClass={metric.gradientClass}
+          icon={metric.icon}
+          loading={loading}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -217,7 +125,7 @@ function getTopOriginalTrafficSource(data: DashboardData | null): {
   count: number;
   percentage: number;
 } {
-  if (!data || !data.originalSourceBreakdown) {
+  if (!data || !data.originalSourceBreakdown || Object.keys(data.originalSourceBreakdown).length === 0) {
     return { name: 'Unknown', count: 0, percentage: 0 };
   }
 
@@ -248,17 +156,16 @@ function getTopProduct(data: DashboardData | null): {
   name: string;
   count: number;
 } {
-  if (!data || !data.topProducts || data.topProducts.length === 0) {
+  if (!data || !data.topProducts || !Array.isArray(data.topProducts) || data.topProducts.length === 0) {
     return { name: 'No data', count: 0 };
   }
 
   const topProduct = data.topProducts[0];
   return {
-    name: topProduct.name,
-    count: topProduct.count
+    name: topProduct?.name || 'Unknown',
+    count: topProduct?.count || 0
   };
 }
-
 
 /**
  * Format source names for better display
@@ -273,31 +180,4 @@ function formatSourceName(source: string): string {
   };
 
   return sourceMap[source] || source;
-}
-
-
-/**
- * Format date for display
- */
-function formatDate(dateString: string): string {
-  try {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-
-    if (diffInMinutes < 1) {
-      return 'Just now';
-    } else if (diffInMinutes < 60) {
-      return `${diffInMinutes}m ago`;
-    } else if (diffInMinutes < 1440) { // 24 hours
-      const hours = Math.floor(diffInMinutes / 60);
-      return `${hours}h ago`;
-    } else {
-      const days = Math.floor(diffInMinutes / 1440);
-      return `${days}d ago`;
-    }
-  } catch (error) {
-    console.warn('Error formatting date:', error);
-    return 'Unknown';
-  }
 }

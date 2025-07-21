@@ -56,8 +56,11 @@ export async function saveToCache(data: DashboardData, source: 'baseline' | 'api
     const now = Date.now();
     const expiresAt = now + (CACHE_DURATION_MINUTES * 60 * 1000);
     
+    // Clean data to remove undefined values
+    const cleanData = JSON.parse(JSON.stringify(data, (key, value) => value === undefined ? null : value));
+    
     const cacheData: CacheData = {
-      data,
+      data: cleanData,
       lastUpdated: new Date(now).toISOString(),
       source,
       cacheExpiry: new Date(expiresAt).toISOString()

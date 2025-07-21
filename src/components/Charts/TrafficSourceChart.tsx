@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card, Typography, Skeleton } from 'antd';
 import { Doughnut } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -13,8 +12,6 @@ import { DashboardData } from '../../lib/types';
 // Register Chart.js components
 ChartJS.register(ArcElement, Tooltip, Legend);
 
-const { Title } = Typography;
-
 interface TrafficSourceChartProps {
   data: DashboardData | null;
   loading?: boolean;
@@ -24,77 +21,81 @@ interface TrafficSourceChartProps {
 export default function TrafficSourceChart({ data, loading = false, height = 300 }: TrafficSourceChartProps) {
   if (loading) {
     return (
-      <Card 
-        className="dashboard-card"
-        style={{ height: '100%' }}
-      >
-        <Title level={4} style={{ marginBottom: '16px' }}>Lead Sources</Title>
-        <div style={{ height: `${height}px`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <Skeleton.Node active style={{ width: '200px', height: '200px' }}>
-            <div style={{ width: '200px', height: '200px', borderRadius: '50%' }} />
-          </Skeleton.Node>
+      <div className="modern-card">
+        <div className="w-48 h-6 skeleton mb-6"></div>
+        <div className="w-full skeleton rounded-full mx-auto" style={{ 
+          height: `${height}px`,
+          maxWidth: `${height}px`
+        }}></div>
+        <div className="mt-4 space-y-2">
+          <div className="w-full h-4 skeleton"></div>
+          <div className="w-3/4 h-4 skeleton"></div>
         </div>
-      </Card>
+      </div>
     );
   }
 
   if (!data || !data.originalSourceBreakdown) {
     return (
-      <Card 
-        className="dashboard-card"
-        style={{ height: '100%' }}
-      >
-        <Title level={4} style={{ marginBottom: '16px' }}>Lead Sources</Title>
+      <div className="modern-card">
+        <h3 className="title-small mb-6">Lead Sources</h3>
         <div style={{ 
           height: `${height}px`, 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center',
-          color: '#8c8c8c',
+          color: 'var(--text-muted)',
           textAlign: 'center'
         }}>
           No data available
         </div>
-      </Card>
+      </div>
     );
   }
 
   // Prepare chart data using original traffic source
-  const sourceData = data.originalSourceBreakdown;
-  const labels = Object.keys(sourceData);
+  const sourceData = data.originalSourceBreakdown || {};
+  const originalLabels = Object.keys(sourceData);
+  const labels = originalLabels.map(label => formatSourceLabel(label));
   const values = Object.values(sourceData);
   
   // Color mapping for different traffic sources
   const getSourceColor = (source: string): string => {
     const colorMap: Record<string, string> = {
-      'Facebook': '#1877f2',        // Facebook blue
       'Paid Social': '#1877f2',     // Facebook blue
-      'Direct Traffic': '#52c41a',  // Green
-      'Direct': '#52c41a',          // Green
-      'Google': '#ea4335',          // Google red
+      'Direct Traffic': '#22c55e',  // Green
       'Paid Search': '#ea4335',     // Google red
-      'Other Campaigns': '#faad14', // Orange
-      'Organic Search': '#34a853',  // Google green
-      'Email': '#faad14',           // Orange
-      'Other': '#8c8c8c',           // Gray
-      'Unknown': '#d9d9d9'          // Light gray
+      'Other Campaigns': '#f59e0b', // Orange
+      'Organic Social': '#f94ef0ff',  // Emerald green (for Organic Social)
+      'Organic Search': '#f94ef0ff',  // Emerald green
+      'Offline Sources': '#8b5cf6', // Purple
+      'Email': '#8b5cf6',           // Purple
+      'Other': '#6b7280',           // Gray
+      'Unknown': '#9ca3af'          // Light gray
     };
     
-    return colorMap[source] || '#8c8c8c';
+    return colorMap[source] || '#6b7280';
   };
 
-  // Create colors array with proper mapping
-  const colors = labels.map(label => {
-    console.log('TrafficSource label:', label, 'Color:', getSourceColor(label));
-    return getSourceColor(label);
-  });
+  // Use reliable color array
+  const chartColors = [
+    '#1877f2', // Facebook blue
+    '#22c55e', // Green
+    '#ea4335', // Google red
+    '#f59e0b', // Orange
+    '#8b5cf6', // Purple
+    '#ec4899', // Pink
+    '#14b8a6', // Teal
+    '#6b7280'  // Gray
+  ];
+
 
   const chartData = {
-    labels: labels.map(label => formatSourceLabel(label)),
+    labels: labels,
     datasets: [{
       data: values,
-      backgroundColor: colors,
-      borderColor: '#ffffff',
+      backgroundColor: chartColors.slice(0, values.length || 1),
+      borderColor: 'rgba(255, 255, 255, 0.2)',
       borderWidth: 2,
       hoverBorderWidth: 3,
       hoverBorderColor: '#ffffff'
@@ -112,23 +113,25 @@ export default function TrafficSourceChart({ data, loading = false, height = 300
           usePointStyle: true,
           pointStyle: 'circle',
           font: {
-            size: 12,
-            family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+            size: 11,
+            family: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
           },
-          color: '#262626',
+          color: '#ffffff',
           generateLabels: (chart) => {
             const data = chart.data;
-            if (data.labels && data.datasets.length) {
+            if (data.labels && data.datasets && data.datasets.length > 0 && data.datasets[0].data) {
               return data.labels.map((label, i) => {
-                const value = data.datasets[0].data[i] as number;
-                const total = (data.datasets[0].data as number[]).reduce((a, b) => a + b, 0);
+                const value = values[i] || 0;
+                const total = values.reduce((a, b) => a + b, 0);
                 const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
-                const originalLabel = labels[i]; // Get original label for color mapping
+                const originalLabel = originalLabels[i];
+                const formattedLabel = formatSourceLabel(originalLabel);
                 
                 return {
-                  text: `${label} (${percentage}%)`,
-                  fillStyle: colors[i],
-                  strokeStyle: colors[i],
+                  text: `${formattedLabel} (${percentage}%)`,
+                  fillStyle: chartColors[i] || '#6b7280',
+                  strokeStyle: chartColors[i] || '#6b7280',
+                  fontColor: '#ffffff',
                   lineWidth: 0,
                   pointStyle: 'circle',
                   hidden: false,
@@ -141,28 +144,30 @@ export default function TrafficSourceChart({ data, loading = false, height = 300
         }
       },
       tooltip: {
-        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
         titleColor: '#ffffff',
         bodyColor: '#ffffff',
-        borderColor: '#f0f0f0',
+        borderColor: 'rgba(255, 255, 255, 0.2)',
         borderWidth: 1,
-        cornerRadius: 6,
+        cornerRadius: 8,
         displayColors: true,
         callbacks: {
           label: (context) => {
-            const label = context.label || '';
-            const value = context.parsed;
-            const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+            const dataIndex = context.dataIndex;
+            const value = values[dataIndex];
+            const originalLabel = originalLabels[dataIndex];
+            const formattedLabel = formatSourceLabel(originalLabel);
+            const total = values.reduce((a: number, b: number) => a + b, 0);
             const percentage = total > 0 ? Math.round((value / total) * 100) : 0;
             
-            return `${label}: ${value} leads (${percentage}%)`;
+            return `${formattedLabel}: ${value} leads (${percentage}%)`;
           }
         }
       }
     },
     elements: {
       arc: {
-        borderWidth: 0,
+        borderWidth: 2,
         borderJoinStyle: 'round'
       }
     },
@@ -180,66 +185,43 @@ export default function TrafficSourceChart({ data, loading = false, height = 300
   };
 
   return (
-    <Card 
-      variant="borderless"
-      style={{ 
-        height: '100%',
-        borderRadius: '8px',
-        boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.03), 0 1px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px 0 rgba(0, 0, 0, 0.02)'
-      }}
-    >
-      <Title level={4} style={{ marginBottom: '16px', color: '#262626' }}>
-        Lead Sources
-      </Title>
+    <div className="modern-card fade-in">
+      <h3 className="title-small mb-6">Lead Sources</h3>
       
-      <div style={{ position: 'relative', height: `${height}px` }}>
+      <div className="relative" style={{ height: `${height}px` }}>
         <Doughnut data={chartData} options={chartOptions} />
         
         {/* Center text showing total */}
-        <div style={{
-          position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          textAlign: 'center',
-          pointerEvents: 'none',
-          zIndex: 1
-        }}>
-          <div style={{ 
-            fontSize: '24px', 
-            fontWeight: '600', 
-            color: '#262626',
-            lineHeight: '1'
-          }}>
-            {data.totalCount}
-          </div>
-          <div style={{ 
-            fontSize: '12px', 
-            color: '#8c8c8c',
-            marginTop: '4px'
-          }}>
-            Total Leads
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-white mb-1">
+              {data.totalCount}
+            </div>
+            <div className="text-sm text-secondary">
+              Total Leads
+            </div>
           </div>
         </div>
       </div>
       
       {/* Summary stats */}
       <div style={{ 
-        marginTop: '16px', 
-        padding: '12px',
-        background: '#fafafa',
-        borderRadius: '6px',
+        marginTop: '1rem', 
+        padding: '1rem',
+        background: 'var(--bg-glass)',
+        borderRadius: '8px',
         fontSize: '12px',
-        color: '#8c8c8c'
+        color: 'var(--text-secondary)',
+        backdropFilter: 'blur(10px)'
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="flex justify-between items-center">
           <span>Top Source:</span>
-          <span style={{ color: '#262626', fontWeight: '500' }}>
+          <span className="text-white font-medium">
             {getTopSource(sourceData)}
           </span>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
 
@@ -248,15 +230,28 @@ export default function TrafficSourceChart({ data, loading = false, height = 300
  */
 function formatSourceLabel(source: string): string {
   const labelMap: Record<string, string> = {
+    'PAID_SOCIAL': 'Paid Social',
     'Paid Social': 'Paid Social',
-    'Direct Traffic': 'Direct Traffic',
+    'PAID_SEARCH': 'Paid Search', 
     'Paid Search': 'Paid Search',
+    'DIRECT_TRAFFIC': 'Direct',
+    'Direct Traffic': 'Direct',
+    'SOCIAL_MEDIA': 'Social Media',
+    'Social Media': 'Social Media',
+    'OTHER_CAMPAIGNS': 'Other Campaigns',
     'Other Campaigns': 'Other Campaigns',
+    'ORGANIC_SEARCH': 'Organic Search',
     'Organic Search': 'Organic Search',
+    'ORGANIC_SOCIAL': 'Organic Social',
+    'Organic Social': 'Organic Social',
+    'OFFLINE_SOURCES': 'Offline',
+    'Offline Sources': 'Offline',
     'Unknown': 'Unknown'
   };
   
-  return labelMap[source] || source;
+  return labelMap[source] || source.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  ).join(' ');
 }
 
 /**

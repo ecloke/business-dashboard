@@ -372,15 +372,24 @@ function mapFormType(formDetail: string): string {
  * Calculate number of leads created today
  */
 function calculateTodaysLeads(leads: Lead[]): number {
-  const today = new Date();
-  const todayStr = today.toISOString().split('T')[0]; // Get YYYY-MM-DD format
+  // Get today's date in Malaysian timezone (UTC+8)
+  const malaysianOffset = 8 * 60 * 60 * 1000; // 8 hours in milliseconds
+  const now = new Date();
+  const malaysianNow = new Date(now.getTime() + malaysianOffset);
+  const todayStr = malaysianNow.toISOString().split('T')[0]; // YYYY-MM-DD format
   
   return leads.filter(lead => {
     try {
-      const leadDate = new Date(lead.createDate);
-      const leadDateStr = leadDate.toISOString().split('T')[0];
+      // Parse the UTC date from HubSpot
+      const leadDateUTC = new Date(lead.createDate);
+      // Convert to Malaysian timezone
+      const leadDateMalaysian = new Date(leadDateUTC.getTime() + malaysianOffset);
+      const leadDateStr = leadDateMalaysian.toISOString().split('T')[0];
+      
+      // Compare with today's date in Malaysian timezone
       return leadDateStr === todayStr;
     } catch (error) {
+      console.warn('Error parsing date for lead:', lead.id, error);
       return false;
     }
   }).length;
@@ -509,17 +518,25 @@ function normalizeMessage(message: string): string {
  * Normalize lead status names
  */
 function normalizeLeadStatus(status: string): string {
+  if (!status) return 'Unknown';
+  
   const normalized = status.toLowerCase().trim();
   
   if (normalized === 'won') return 'Won';
   if (normalized === 'lost') return 'Lost';
   if (normalized === 'new') return 'New';
-  if (normalized === 'contacted') return 'Contacted';
+  if (normalized === 'contacted' || normalized === 'attempted_to_contact') return 'Contacted';
   if (normalized === 'qualified') return 'Qualified';
   if (normalized === 'unqualified') return 'Unqualified';
+  if (normalized === 'in_progress') return 'In Progress';
+  if (normalized === 'bad_timing') return 'Bad Timing';
+  if (normalized === 'rfq only') return 'RFQ Only';
   if (normalized === '' || normalized === 'unknown') return 'Unknown';
   
-  return status.charAt(0).toUpperCase() + status.slice(1);
+  // Format other statuses nicely
+  return status.split('_').map(word => 
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  ).join(' ');
 }
 
 /**

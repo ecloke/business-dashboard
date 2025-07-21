@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Dashboard Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #0f1419; color: white; }
+        .section { margin: 20px 0; padding: 20px; border: 1px solid #333; }
+        pre { background: #1a1f2e; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Data Debug</h1>
+    <div id="results"></div>
+
+    <script>
+        async function debugData() {
+            try {
+                const response = await fetch('/api/hubspot-data');
+                const apiData = await response.json();
+                
+                document.getElementById('results').innerHTML = `
+                    <div class="section">
+                        <h2>API Response Structure</h2>
+                        <pre>${JSON.stringify({
+                            success: apiData.success,
+                            totalLeads: apiData.data?.totalCount || 0,
+                            todaysLeads: apiData.data?.todaysLeads || 0,
+                            wonLeads: apiData.data?.wonLeads || 0,
+                            lostLeads: apiData.data?.lostLeads || 0,
+                            hasOriginalSourceBreakdown: !!apiData.data?.originalSourceBreakdown,
+                            hasLeadStatusBreakdown: !!apiData.data?.leadStatusBreakdown
+                        }, null, 2)}</pre>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>Today's Leads (Raw Count)</h2>
+                        <pre>Filter: 2025-07-21
+Count: ${apiData.leads?.filter(lead => lead.createDate?.includes('2025-07-21')).length || 0}</pre>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>Original Source Breakdown</h2>
+                        <pre>${JSON.stringify(apiData.data?.originalSourceBreakdown || {}, null, 2)}</pre>
+                    </div>
+                    
+                    <div class="section">
+                        <h2>Lead Status Breakdown</h2>
+                        <pre>${JSON.stringify(apiData.data?.leadStatusBreakdown || {}, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('results').innerHTML = `<div class="section">Error: ${error.message}</div>`;
+            }
+        }
+        
+        debugData();
+    </script>
+</body>
+</html>

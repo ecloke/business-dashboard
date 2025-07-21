@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPOS Lead Generation Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #262626;
+            line-height: 1.5;
+        }
+
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .dashboard-header {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+        }
+
+        .dashboard-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 8px;
+        }
+
+        .dashboard-subtitle {
+            color: #8c8c8c;
+            font-size: 14px;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .metric-title {
+            font-size: 14px;
+            color: #8c8c8c;
+            margin-bottom: 8px;
+        }
+
+        .metric-value {
+            font-size: 32px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 4px;
+        }
+
+        .metric-trend {
+            font-size: 12px;
+            color: #52c41a;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+            margin-bottom: 16px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .table-card {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            margin-bottom: 24px;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .data-table th {
+            background: #fafafa;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #262626;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .data-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .data-table tr:hover {
+            background: #fafafa;
+        }
+
+        .status-complete {
+            color: #52c41a;
+            background: #f6ffed;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .status-incomplete {
+            color: #fa8c16;
+            background: #fff7e6;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+
+        .geography-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .geography-item:last-child {
+            border-bottom: none;
+        }
+
+        .geography-name {
+            font-weight: 500;
+        }
+
+        .geography-count {
+            background: #1890ff;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-container">
+        <!-- Header -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title">EPOS Lead Generation Dashboard</h1>
+            <p class="dashboard-subtitle">Real-time insights from HubSpot CRM • Last updated: July 20, 2025</p>
+        </div>
+
+        <!-- Key Metrics -->
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-title">Total Leads</div>
+                <div class="metric-value">27</div>
+                <div class="metric-trend">July 20, 2025</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Top Traffic Source</div>
+                <div class="metric-value">85%</div>
+                <div class="metric-trend">Facebook (Paid Social)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Geographic Coverage</div>
+                <div class="metric-value">8</div>
+                <div class="metric-trend">Malaysian States</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-title">Data Completeness</div>
+                <div class="metric-value">74%</div>
+                <div class="metric-trend">Complete Profiles</div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <!-- Traffic Sources -->
+            <div class="chart-card">
+                <h3 class="chart-title">Lead Sources</h3>
+                <div class="chart-container">
+                    <canvas id="trafficSourceChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Form Performance -->
+            <div class="chart-card">
+                <h3 class="chart-title">Form Performance</h3>
+                <div class="chart-container">
+                    <canvas id="formChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Hourly Distribution -->
+            <div class="chart-card">
+                <h3 class="chart-title">Leads by Hour (July 20)</h3>
+                <div class="chart-container">
+                    <canvas id="hourlyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Geographic Distribution -->
+            <div class="chart-card">
+                <h3 class="chart-title">Geographic Distribution</h3>
+                <div style="padding: 20px 0;">
+                    <div class="geography-item">
+                        <span class="geography-name">Kuala Lumpur</span>
+                        <span class="geography-count">4</span>
+                    </div>
+                    <div class="geography-item">
+                        <span class="geography-name">Selangor</span>
+                        <span class="geography-count">6</span>
+                    </div>
+                    <div class="geography-item">
+                        <span class="geography-name">Perak</span>
+                        <span class="geography-count">1</span>
+                    </div>
+                    <div class="geography-item">
+                        <span class="geography-name">Penang</span>
+                        <span class="geography-count">1</span>
+                    </div>
+                    <div class="geography-item">
+                        <span class="geography-name">Johor</span>
+                        <span class="geography-count">1</span>
+                    </div>
+                    <div class="geography-item">
+                        <span class="geography-name">Other/Unknown</span>
+                        <span class="geography-count">14</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Industry Analysis -->
+        <div class="table-card">
+            <h3 class="chart-title">Industry Breakdown</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Industry</th>
+                        <th>Lead Count</th>
+                        <th>Percentage</th>
+                        <th>Top Companies</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>F&B / Restaurants</td>
+                        <td>6</td>
+                        <td>22%</td>
+                        <td>Jin Cafe, Burger Sulthan's, cafe and restaurants</td>
+                    </tr>
+                    <tr>
+                        <td>Retail</td>
+                        <td>2</td>
+                        <td>7%</td>
+                        <td>WICARE, Pior Trading</td>
+                    </tr>
+                    <tr>
+                        <td>Business Services</td>
+                        <td>3</td>
+                        <td>11%</td>
+                        <td>G2 Management, Prestan Enterprise</td>
+                    </tr>
+                    <tr>
+                        <td>Unknown/Other</td>
+                        <td>16</td>
+                        <td>60%</td>
+                        <td>Various small businesses</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Recent Leads -->
+        <div class="table-card">
+            <h3 class="chart-title">Recent Leads</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Name</th>
+                        <th>Company</th>
+                        <th>Source</th>
+                        <th>Form</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>14:58</td>
+                        <td>Leong Ah Ping</td>
+                        <td>-</td>
+                        <td>Facebook</td>
+                        <td>Tablet POS v4</td>
+                        <td><span class="status-incomplete">Incomplete</span></td>
+                    </tr>
+                    <tr>
+                        <td>13:41</td>
+                        <td>Hamzah Kamaruddin</td>
+                        <td>cafe and restaurants</td>
+                        <td>Facebook</td>
+                        <td>Tablet POS v3</td>
+                        <td><span class="status-complete">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>13:38</td>
+                        <td>Angel Siew</td>
+                        <td>Jin Cafe & Bristol Sdn Bhd</td>
+                        <td>Direct</td>
+                        <td>Unbounce LP</td>
+                        <td><span class="status-complete">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>13:37</td>
+                        <td>Nadine987</td>
+                        <td>SRSB</td>
+                        <td>Facebook</td>
+                        <td>Mobile POS v3</td>
+                        <td><span class="status-complete">Complete</span></td>
+                    </tr>
+                    <tr>
+                        <td>13:18</td>
+                        <td>Adams Isaac</td>
+                        <td>Prestan Enterprise</td>
+                        <td>Facebook</td>
+                        <td>Mobile POS v3</td>
+                        <td><span class="status-complete">Complete</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Traffic Sources Chart
+        const trafficCtx = document.getElementById('trafficSourceChart').getContext('2d');
+        new Chart(trafficCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Facebook (Paid Social)', 'Direct Traffic', 'Google (Paid Search)'],
+                datasets: [{
+                    data: [23, 3, 1],
+                    backgroundColor: ['#1890ff', '#52c41a', '#faad14'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            padding: 20,
+                            usePointStyle: true
+                        }
+                    }
+                }
+            }
+        });
+
+        // Form Performance Chart
+        const formCtx = document.getElementById('formChart').getContext('2d');
+        new Chart(formCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Mobile POS v3', 'Tablet POS v3', 'Tablet POS v4', 'Unbounce LP'],
+                datasets: [{
+                    label: 'Leads',
+                    data: [12, 3, 9, 3],
+                    backgroundColor: '#1890ff',
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+
+        // Hourly Distribution Chart
+        const hourlyCtx = document.getElementById('hourlyChart').getContext('2d');
+        new Chart(hourlyCtx, {
+            type: 'line',
+            data: {
+                labels: ['00:00', '02:00', '04:00', '06:00', '08:00', '10:00', '12:00', '14:00'],
+                datasets: [{
+                    label: 'Leads per Hour',
+                    data: [3, 1, 0, 2, 3, 1, 8, 9],
+                    borderColor: '#1890ff',
+                    backgroundColor: 'rgba(24, 144, 255, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

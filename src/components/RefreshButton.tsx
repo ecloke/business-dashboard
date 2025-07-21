@@ -34,7 +34,7 @@ export default function RefreshButton({ onRefresh, loading = false, lastUpdated 
           Last refresh
         </div>
         <div className="text-sm text-secondary">
-          {formatTimeAgo(lastUpdated)}
+          {formatTimeAgo(lastUpdated ?? null)}
         </div>
       </div>
       

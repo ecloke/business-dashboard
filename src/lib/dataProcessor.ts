@@ -6,26 +6,28 @@ import { parse, format } from 'date-fns';
  * Converts raw CSV data to structured Lead objects and calculates metrics
  */
 export function processCSVData(leads: Lead[]): DashboardData {
+  // Remove duplicates based on phone number before processing
+  const deduplicatedLeads = deduplicateByPhone(leads);
   const lastUpdated = new Date().toISOString();
-  const totalCount = leads.length;
+  const totalCount = deduplicatedLeads.length;
 
-  // Calculate metrics
-  const todaysLeads = calculateTodaysLeads(leads);
-  const wonLeads = calculateWonLeads(leads);
-  const lostLeads = calculateLostLeads(leads);
-  const sourceBreakdown = calculateSourceBreakdown(leads);
-  const originalSourceBreakdown = calculateOriginalSourceBreakdown(leads);
-  const formBreakdown = calculateFormBreakdown(leads);
-  const geoBreakdown = calculateGeoBreakdown(leads);
-  const hourlyDistribution = calculateHourlyDistribution(leads);
-  const industryBreakdown = calculateIndustryBreakdown(leads);
-  const messageBreakdown = calculateMessageBreakdown(leads);
-  const leadStatusBreakdown = calculateLeadStatusBreakdown(leads);
+  // Calculate metrics using deduplicated data
+  const todaysLeads = calculateTodaysLeads(deduplicatedLeads);
+  const wonLeads = calculateWonLeads(deduplicatedLeads);
+  const lostLeads = calculateLostLeads(deduplicatedLeads);
+  const sourceBreakdown = calculateSourceBreakdown(deduplicatedLeads);
+  const originalSourceBreakdown = calculateOriginalSourceBreakdown(deduplicatedLeads);
+  const formBreakdown = calculateFormBreakdown(deduplicatedLeads);
+  const geoBreakdown = calculateGeoBreakdown(deduplicatedLeads);
+  const hourlyDistribution = calculateHourlyDistribution(deduplicatedLeads);
+  const industryBreakdown = calculateIndustryBreakdown(deduplicatedLeads);
+  const messageBreakdown = calculateMessageBreakdown(deduplicatedLeads);
+  const leadStatusBreakdown = calculateLeadStatusBreakdown(deduplicatedLeads);
   const topProducts = calculateTopProducts(messageBreakdown);
-  const completenessRate = calculateCompletenessRate(leads);
+  const completenessRate = calculateCompletenessRate(deduplicatedLeads);
 
   return {
-    leads,
+    leads: deduplicatedLeads,
     lastUpdated,
     totalCount,
     todaysLeads,
@@ -46,20 +48,16 @@ export function processCSVData(leads: Lead[]): DashboardData {
 
 /**
  * Merge baseline data with fresh API data
- * Combines baseline CSV data with new leads from HubSpot API
+ * Combines baseline CSV data with new leads from HubSpot API, removing duplicates by phone number
  */
 export function mergeApiData(baseline: DashboardData, apiData: Lead[]): DashboardData {
-  // Remove duplicates and merge new leads
-  const existingIds = new Set(baseline.leads.map(lead => lead.id));
-  const newLeads = apiData.filter(lead => !existingIds.has(lead.id));
-  
   // Combine all leads (baseline + new API data)
-  const allLeads = [...baseline.leads, ...newLeads];
+  const allLeads = [...baseline.leads, ...apiData];
   
-  // Sort by creation date (newest first)
+  // Sort by creation date (newest first) to prioritize recent data for duplicates
   allLeads.sort((a, b) => new Date(b.createDate).getTime() - new Date(a.createDate).getTime());
 
-  // Recalculate all metrics with combined data
+  // Remove duplicates by phone number and recalculate all metrics
   return processCSVData(allLeads);
 }
 
@@ -196,6 +194,7 @@ function calculateCompletenessRate(leads: Lead[]): number {
  * Normalize traffic source names for consistent grouping
  */
 function normalizeTrafficSource(source: string): string {
+  if (!source) return 'Other';
   const normalized = source.toLowerCase().trim();
   
   if (normalized.includes('facebook') || normalized.includes('paid social')) {
@@ -221,19 +220,35 @@ function normalizeTrafficSource(source: string): string {
  * Normalize form type names for consistent grouping
  */
 function normalizeFormType(formType: string): string {
+  if (!formType) return 'Other';
   const normalized = formType.toLowerCase().trim();
   
   if (normalized.includes('mobile pos v3')) {
     return 'Mobile POS v3';
   }
-  if (normalized.includes('tablet pos v3')) {
-    return 'Tablet POS v3';
+  if (normalized.includes('mobile pos v2')) {
+    return 'Mobile POS v2';
   }
   if (normalized.includes('tablet pos v4')) {
     return 'Tablet POS v4';
   }
+  if (normalized.includes('tablet pos v3')) {
+    return 'Tablet POS v3';
+  }
+  if (normalized.includes('tablet pos v2')) {
+    return 'Tablet POS v2';
+  }
+  if (normalized.includes('dstore')) {
+    return 'DStore Leads';
+  }
   if (normalized.includes('unbounce')) {
     return 'Unbounce LP';
+  }
+  if (normalized.includes('mobile pos') && !normalized.includes('v2') && !normalized.includes('v3')) {
+    return 'Mobile POS';
+  }
+  if (normalized.includes('tablet pos') && !normalized.includes('v2') && !normalized.includes('v3') && !normalized.includes('v4')) {
+    return 'Tablet POS';
   }
   
   return 'Other';
@@ -243,6 +258,7 @@ function normalizeFormType(formType: string): string {
  * Normalize location names for consistent grouping
  */
 function normalizeLocation(location: string): string {
+  if (!location) return 'Unknown';
   const normalized = location.toLowerCase().trim();
   
   if (normalized.includes('kuala lumpur') || normalized.includes('kl')) {
@@ -271,6 +287,7 @@ function normalizeLocation(location: string): string {
  * Normalize industry names for consistent grouping
  */
 function normalizeIndustry(industry: string): string {
+  if (!industry) return 'Unknown';
   const normalized = industry.toLowerCase().trim();
   
   if (normalized.includes('f&b') || normalized.includes('food') || normalized.includes('restaurant') || normalized.includes('cafe')) {
@@ -293,6 +310,8 @@ function normalizeIndustry(industry: string): string {
  * Clean and format Malaysian phone numbers
  */
 function cleanPhoneNumber(phone: string): string {
+  if (!phone) return '';
+  
   // Remove all non-digit characters except +
   let cleaned = phone.replace(/[^\d+]/g, '');
   
@@ -300,11 +319,51 @@ function cleanPhoneNumber(phone: string): string {
   if (cleaned.startsWith('60') && !cleaned.startsWith('+60')) {
     cleaned = '+' + cleaned;
   }
-  if (cleaned.startsWith('0') && cleaned.length > 10) {
+  if (cleaned.startsWith('0') && cleaned.length >= 10) {
     cleaned = '+60' + cleaned.substring(1);
   }
   
   return cleaned;
+}
+
+/**
+ * Remove duplicate leads based on phone number
+ * Keeps the most recent lead when duplicates are found
+ */
+export function deduplicateByPhone(leads: Lead[]): Lead[] {
+  const phoneToLead = new Map<string, Lead>();
+  
+  // Sort by creation date (newest first) to prioritize recent data
+  const sortedLeads = [...leads].sort((a, b) => 
+    new Date(b.createDate).getTime() - new Date(a.createDate).getTime()
+  );
+  
+  sortedLeads.forEach(lead => {
+    const cleanedPhone = cleanPhoneNumber(lead.phone || '');
+    
+    // Skip leads with empty or invalid phone numbers
+    if (!cleanedPhone || cleanedPhone.length < 8) {
+      // For leads without valid phone numbers, use email as fallback identifier
+      const emailKey = `email_${lead.email || ''}`;
+      if (lead.email && !phoneToLead.has(emailKey)) {
+        phoneToLead.set(emailKey, lead);
+      } else if (!lead.email) {
+        // If no email either, use ID as unique identifier
+        const idKey = `id_${lead.id}`;
+        if (!phoneToLead.has(idKey)) {
+          phoneToLead.set(idKey, lead);
+        }
+      }
+      return;
+    }
+    
+    // Only keep the first occurrence (which is the most recent due to sorting)
+    if (!phoneToLead.has(cleanedPhone)) {
+      phoneToLead.set(cleanedPhone, lead);
+    }
+  });
+  
+  return Array.from(phoneToLead.values());
 }
 
 /**
@@ -355,14 +414,29 @@ function mapFormType(formDetail: string): string {
   if (detail.includes('mobile pos v3')) {
     return 'Mobile POS v3';
   }
-  if (detail.includes('tablet pos v3')) {
-    return 'Tablet POS v3';
+  if (detail.includes('mobile pos v2')) {
+    return 'Mobile POS v2';
   }
   if (detail.includes('tablet pos v4')) {
     return 'Tablet POS v4';
   }
+  if (detail.includes('tablet pos v3')) {
+    return 'Tablet POS v3';
+  }
+  if (detail.includes('tablet pos v2')) {
+    return 'Tablet POS v2';
+  }
+  if (detail.includes('dstore')) {
+    return 'DStore Leads';
+  }
   if (detail.includes('unbounce')) {
     return 'Unbounce LP';
+  }
+  if (detail.includes('mobile pos') && !detail.includes('v2') && !detail.includes('v3')) {
+    return 'Mobile POS';
+  }
+  if (detail.includes('tablet pos') && !detail.includes('v2') && !detail.includes('v3') && !detail.includes('v4')) {
+    return 'Tablet POS';
   }
   
   return 'Other';
@@ -471,6 +545,7 @@ function calculateTopProducts(messageBreakdown: Record<string, number>): Array<{
  * Normalize original traffic source names
  */
 function normalizeOriginalTrafficSource(source: string): string {
+  if (!source) return 'Unknown';
   const normalized = source.toLowerCase().trim();
   
   if (normalized.includes('direct traffic') || normalized.includes('direct')) {
@@ -499,6 +574,7 @@ function normalizeOriginalTrafficSource(source: string): string {
  * Normalize message/product names
  */
 function normalizeMessage(message: string): string {
+  if (!message) return 'Unknown';
   const normalized = message.toLowerCase().trim();
   
   if (normalized.includes('mobile pos')) {
@@ -537,6 +613,65 @@ function normalizeLeadStatus(status: string): string {
   return status.split('_').map(word => 
     word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
   ).join(' ');
+}
+
+/**
+ * Filter dashboard data by selected form types
+ * Returns a new DashboardData object with only leads matching the selected form types
+ */
+export function filterDashboardDataByFormTypes(data: DashboardData, selectedFormTypes: string[]): DashboardData {
+  // If no form types selected or all selected, return original data
+  if (selectedFormTypes.length === 0) {
+    // Return empty data structure
+    return {
+      ...data,
+      leads: [],
+      totalCount: 0,
+      todaysLeads: 0,
+      wonLeads: 0,
+      lostLeads: 0,
+      sourceBreakdown: {},
+      originalSourceBreakdown: {},
+      formBreakdown: {},
+      geoBreakdown: {},
+      hourlyDistribution: {},
+      industryBreakdown: {},
+      messageBreakdown: {},
+      leadStatusBreakdown: {},
+      topProducts: [],
+      completenessRate: 0
+    };
+  }
+
+  // Filter leads by selected form types
+  const filteredLeads = data.leads.filter(lead => 
+    selectedFormTypes.includes(lead.formType)
+  );
+
+  // If no leads match the filter, return empty data
+  if (filteredLeads.length === 0) {
+    return {
+      ...data,
+      leads: [],
+      totalCount: 0,
+      todaysLeads: 0,
+      wonLeads: 0,
+      lostLeads: 0,
+      sourceBreakdown: {},
+      originalSourceBreakdown: {},
+      formBreakdown: {},
+      geoBreakdown: {},
+      hourlyDistribution: {},
+      industryBreakdown: {},
+      messageBreakdown: {},
+      leadStatusBreakdown: {},
+      topProducts: [],
+      completenessRate: 0
+    };
+  }
+
+  // Recalculate all metrics with filtered data
+  return processCSVData(filteredLeads);
 }
 
 /**

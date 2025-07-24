@@ -29,7 +29,16 @@
       "Bash(npm test)",
       "Bash(npm run dev:*)",
       "Bash(curl:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(npm test:*)",
+      "WebFetch(domain:localhost)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(npx tsc:*)",
+      "Bash(timeout:*)",
+      "Bash(rm:*)",
+      "Bash(cut:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": []
   }

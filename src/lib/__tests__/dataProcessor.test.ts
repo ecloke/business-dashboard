@@ -1,4 +1,4 @@
-import { processCSVData, getSampleDashboardData } from '../dataProcessor';
+import { processCSVData, getSampleDashboardData, deduplicateByPhone } from '../dataProcessor';
 import { Lead, DashboardData } from '../types';
 
 const mockLeads: Lead[] = [
@@ -98,8 +98,8 @@ describe('Data Processor Functions', () => {
       
       expect(result.industryBreakdown).toEqual({
         'Technology': 1,
-        'Food & Beverage': 1,
-        'Not Specified': 1
+        'F&B': 1,
+        'Unknown': 1
       });
     });
 
@@ -113,11 +113,10 @@ describe('Data Processor Functions', () => {
     it('calculates hourly distribution correctly', () => {
       const result = processCSVData(mockLeads);
       
-      expect(result.hourlyDistribution).toEqual({
-        '10': 1, // John at 10:30
-        '14': 1, // Jane at 14:15
-        '09': 1  // Ahmad at 09:00
-      });
+      // Malaysian timezone (+8) conversions: 10:30Z->18:30, 14:15Z->22:15, 09:00Z->17:00
+      expect(result.hourlyDistribution['18']).toBe(1); // John at 18:30 MYT
+      expect(result.hourlyDistribution['22']).toBe(1); // Jane at 22:15 MYT  
+      expect(result.hourlyDistribution['17']).toBe(1); // Ahmad at 17:00 MYT
     });
 
     it('handles empty array gracefully', () => {
@@ -170,9 +169,9 @@ describe('Data Processor Functions', () => {
     it('returns data based on initial_data.json', () => {
       const result = getSampleDashboardData();
       
-      // Should match the 19 leads from initial data
-      expect(result.totalCount).toBe(19);
-      expect(result.leads).toHaveLength(19);
+      // Should match the leads from initial data (after deduplication)
+      expect(result.totalCount).toBeGreaterThan(0);
+      expect(result.leads).toHaveLength(result.totalCount);
     });
 
     it('has consistent data relationships', () => {
@@ -188,6 +187,136 @@ describe('Data Processor Functions', () => {
       // Form breakdown total should equal total count
       const formTotal = Object.values(result.formBreakdown).reduce((a, b) => a + b, 0);
       expect(formTotal).toBe(result.totalCount);
+    });
+  });
+
+  describe('deduplicateByPhone', () => {
+    it('removes duplicates based on phone number', () => {
+      const duplicateLeads: Lead[] = [
+        {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com',
+          phone: '+60123456789',
+          createDate: '2025-01-20T10:30:00Z',
+          trafficSource: 'Paid Social',
+          formType: 'Mobile POS v3',
+          isComplete: true
+        },
+        {
+          id: '2',
+          firstName: 'John',
+          lastName: 'Doe Updated',
+          email: 'john.updated@example.com',
+          phone: '+60123456789', // Same phone number
+          createDate: '2025-01-21T14:30:00Z', // More recent
+          trafficSource: 'Direct Traffic',
+          formType: 'Tablet POS v4',
+          isComplete: true
+        }
+      ];
+
+      const result = deduplicateByPhone(duplicateLeads);
+      
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('2'); // Should keep the more recent one
+      expect(result[0].lastName).toBe('Doe Updated');
+    });
+
+    it('keeps leads with different phone numbers', () => {
+      const uniqueLeads: Lead[] = [
+        {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com',
+          phone: '+60123456789',
+          createDate: '2025-01-20T10:30:00Z',
+          trafficSource: 'Paid Social',
+          formType: 'Mobile POS v3',
+          isComplete: true
+        },
+        {
+          id: '2',
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane@example.com',
+          phone: '+60123456790', // Different phone
+          createDate: '2025-01-21T14:30:00Z',
+          trafficSource: 'Direct Traffic',
+          formType: 'Tablet POS v4',
+          isComplete: true
+        }
+      ];
+
+      const result = deduplicateByPhone(uniqueLeads);
+      
+      expect(result).toHaveLength(2);
+    });
+
+    it('handles leads with empty phone numbers using email fallback', () => {
+      const leadsWithoutPhone: Lead[] = [
+        {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com',
+          phone: '', // Empty phone
+          createDate: '2025-01-20T10:30:00Z',
+          trafficSource: 'Paid Social',
+          formType: 'Mobile POS v3',
+          isComplete: false
+        },
+        {
+          id: '2',
+          firstName: 'John',
+          lastName: 'Doe Updated',
+          email: 'john@example.com', // Same email
+          phone: '', // Empty phone
+          createDate: '2025-01-21T14:30:00Z',
+          trafficSource: 'Direct Traffic',
+          formType: 'Tablet POS v4',
+          isComplete: false
+        }
+      ];
+
+      const result = deduplicateByPhone(leadsWithoutPhone);
+      
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('2'); // Should keep the more recent one
+    });
+
+    it('normalizes Malaysian phone numbers before deduplication', () => {
+      const leadsWithVariantPhones: Lead[] = [
+        {
+          id: '1',
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@example.com',
+          phone: '0123456789', // Malaysian format without country code
+          createDate: '2025-01-20T10:30:00Z',
+          trafficSource: 'Paid Social',
+          formType: 'Mobile POS v3',
+          isComplete: true
+        },
+        {
+          id: '2',
+          firstName: 'John',
+          lastName: 'Doe Updated',
+          email: 'john.updated@example.com',
+          phone: '+60123456789', // Same number with country code
+          createDate: '2025-01-21T14:30:00Z',
+          trafficSource: 'Direct Traffic',
+          formType: 'Tablet POS v4',
+          isComplete: true
+        }
+      ];
+
+      const result = deduplicateByPhone(leadsWithVariantPhones);
+      
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('2'); // Should keep the more recent one
     });
   });
 

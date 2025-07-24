@@ -5,8 +5,9 @@ import ProductsBreakdownChart from './Charts/ProductsBreakdownChart';
 import LeadStatusChart from './Charts/LeadStatusChart';
 import LeadsGrowthChart from './Charts/LeadsGrowthChart';
 import RefreshButton from './RefreshButton';
+import DashboardFilter from './DashboardFilter';
 import { DashboardData, Lead } from '../lib/types';
-import { processCSVData } from '../lib/dataProcessor';
+import { processCSVData, filterDashboardDataByFormTypes } from '../lib/dataProcessor';
 import initialData from '../data/initial_data.json';
 
 interface DashboardProps {
@@ -14,7 +15,9 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ className }: DashboardProps) {
-  const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
+  const [rawDashboardData, setRawDashboardData] = useState<DashboardData | null>(null);
+  const [filteredDashboardData, setFilteredDashboardData] = useState<DashboardData | null>(null);
+  const [selectedFormTypes, setSelectedFormTypes] = useState<string[]>([]);
   const [leads, setLeads] = useState<Lead[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +33,7 @@ export default function Dashboard({ className }: DashboardProps) {
       const processedData = processCSVData(leadsData);
       
       setLeads(leadsData);
-      setDashboardData(processedData);
+      setRawDashboardData(processedData);
       setLastUpdated(new Date());
       setError(null);
     } catch (err) {
@@ -65,7 +68,7 @@ export default function Dashboard({ className }: DashboardProps) {
       
       if (apiData.success && apiData.data) {
         setLeads(apiData.leads || []);
-        setDashboardData(apiData.data);
+        setRawDashboardData(apiData.data);
         setLastUpdated(new Date(apiData.lastUpdated || Date.now()));
       } else {
         throw new Error(apiData.message || 'API returned no data');
@@ -80,6 +83,21 @@ export default function Dashboard({ className }: DashboardProps) {
       setRefreshing(false);
     }
   };
+
+  /**
+   * Handle filter changes and update filtered data
+   */
+  const handleFilterChange = (formTypes: string[]) => {
+    setSelectedFormTypes(formTypes);
+  };
+
+  // Apply filters whenever raw data or selected form types change
+  useEffect(() => {
+    if (rawDashboardData) {
+      const filtered = filterDashboardDataByFormTypes(rawDashboardData, selectedFormTypes);
+      setFilteredDashboardData(filtered);
+    }
+  }, [rawDashboardData, selectedFormTypes]);
 
   // Load data on component mount
   useEffect(() => {
@@ -158,18 +176,25 @@ export default function Dashboard({ className }: DashboardProps) {
         </div>
       )}
 
+      {/* Dashboard Filter */}
+      <DashboardFilter 
+        data={rawDashboardData} 
+        onFilterChange={handleFilterChange}
+        loading={refreshing || !rawDashboardData}
+      />
+
       {/* Metrics Cards Section */}
-      <MetricsCards data={dashboardData} loading={refreshing} />
+      <MetricsCards data={filteredDashboardData} loading={refreshing} />
 
       {/* Charts Section */}
       <div className="grid-2 mb-8">
         <LeadsGrowthChart 
-          data={dashboardData} 
+          data={filteredDashboardData} 
           loading={refreshing} 
           height={320}
         />
         <LeadStatusChart 
-          data={dashboardData} 
+          data={filteredDashboardData} 
           loading={refreshing} 
           height={320}
         />
@@ -177,12 +202,12 @@ export default function Dashboard({ className }: DashboardProps) {
 
       <div className="grid-2 mb-8">
         <TrafficSourceChart 
-          data={dashboardData} 
+          data={filteredDashboardData} 
           loading={refreshing} 
           height={300}
         />
         <ProductsBreakdownChart 
-          data={dashboardData} 
+          data={filteredDashboardData} 
           loading={refreshing} 
           height={300}
         />
@@ -195,7 +220,10 @@ export default function Dashboard({ className }: DashboardProps) {
           This dashboard is built by an AI
         </div>
         <div className="text-xs">
-          {dashboardData?.totalCount || 0} total leads tracked
+          {filteredDashboardData?.totalCount || 0} leads shown 
+          {rawDashboardData && filteredDashboardData && rawDashboardData.totalCount !== filteredDashboardData.totalCount 
+            ? ` of ${rawDashboardData.totalCount} total` 
+            : ' tracked'}
         </div>
       </div>
     </div>

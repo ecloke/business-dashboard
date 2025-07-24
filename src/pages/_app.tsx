@@ -1,94 +1,8 @@
 import React, { ErrorInfo } from 'react';
 import type { AppProps } from 'next/app';
-import { ConfigProvider, theme } from 'antd';
 import { ErrorBoundary } from 'react-error-boundary';
-import 'antd/dist/reset.css';
 import '../styles/globals.css';
 
-// Ant Design theme configuration matching dashboard.html design
-const antdTheme = {
-  algorithm: theme.defaultAlgorithm,
-  token: {
-    // Color tokens matching the dashboard design
-    colorPrimary: '#1890ff', // Primary blue
-    colorSuccess: '#52c41a', // Success green
-    colorWarning: '#faad14', // Warning orange
-    colorError: '#ff4d4f',   // Error red
-    colorInfo: '#1890ff',    // Info blue (same as primary)
-    
-    // Background colors
-    colorBgContainer: '#ffffff',
-    colorBgElevated: '#ffffff',
-    colorBgLayout: '#f5f5f5',
-    
-    // Text colors
-    colorText: '#262626',
-    colorTextSecondary: '#8c8c8c',
-    colorTextTertiary: '#bfbfbf',
-    colorTextQuaternary: '#f0f0f0',
-    
-    // Border and shadow
-    colorBorder: '#f0f0f0',
-    colorBorderSecondary: '#f0f0f0',
-    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.06)',
-    boxShadowSecondary: '0 4px 12px rgba(0, 0, 0, 0.15)',
-    
-    // Border radius
-    borderRadius: 8,
-    borderRadiusLG: 8,
-    borderRadiusSM: 6,
-    
-    // Font family
-    fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-    fontSize: 14,
-    fontSizeHeading1: 24,
-    fontSizeHeading2: 20,
-    fontSizeHeading3: 16,
-    
-    // Spacing
-    padding: 16,
-    paddingLG: 24,
-    paddingSM: 12,
-    paddingXS: 8,
-    margin: 16,
-    marginLG: 24,
-    marginSM: 12,
-    marginXS: 8,
-  },
-  components: {
-    // Card component customization
-    Card: {
-      colorBgContainer: '#ffffff',
-      colorBorderSecondary: '#f0f0f0',
-      paddingLG: 24,
-    },
-    // Statistic component for metrics cards
-    Statistic: {
-      colorTextHeading: '#262626',
-      fontSizeHeading2: 32,
-      fontSizeHeading3: 16,
-    },
-    // Table component customization
-    Table: {
-      colorBgContainer: '#ffffff',
-      colorFillAlter: '#fafafa',
-      colorBorderSecondary: '#f0f0f0',
-    },
-    // Button component customization
-    Button: {
-      colorPrimary: '#1890ff',
-      colorPrimaryHover: '#40a9ff',
-      colorPrimaryActive: '#096dd9',
-      borderRadius: 6,
-    },
-    // Layout component customization
-    Layout: {
-      colorBgBody: '#f5f5f5',
-      colorBgHeader: '#ffffff',
-      colorBgTrigger: '#ffffff',
-    },
-  },
-};
 
 // Error fallback component
 function ErrorFallback({ error, resetErrorBoundary }: { error: Error; resetErrorBoundary: () => void }) {
@@ -182,11 +96,9 @@ export default function App({ Component, pageProps }: AppProps) {
         }
       }}
     >
-      <ConfigProvider theme={antdTheme}>
-        <div className="app-container">
-          <Component {...pageProps} />
-        </div>
-      </ConfigProvider>
+      <div className="app-container">
+        <Component {...pageProps} />
+      </div>
     </ErrorBoundary>
   );
 }

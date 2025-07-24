@@ -226,3 +226,48 @@ export interface DashboardActions {
   clearError: () => void;
   refresh: () => Promise<void>;
 }
+
+// Marketing ROI Dashboard Types
+export interface MarketingData {
+  date: string;
+  channel: string;
+  spend: number;
+  leads: number;
+  clicks: number;
+  impressions: number;
+}
+
+export interface MarketingMetrics {
+  spend: number;
+  leads: number;
+  clicks: number;
+  impressions: number;
+  costPerConversion: number;
+  conversionRate: number;
+  ctr: number;
+  closedDeals: number;
+  closedDealAmount: number;
+  profit: number;
+  cac: number;
+}
+
+export interface ChannelBreakdown {
+  [channel: string]: MarketingMetrics;
+}
+
+export interface MarketingDashboardData {
+  totalMetrics: MarketingMetrics;
+  channelBreakdown: ChannelBreakdown;
+  dateRange: {
+    start: string;
+    end: string;
+  };
+  lastUpdated: string;
+}
+
+export interface DateRange {
+  start: Date;
+  end: Date;
+}
+
+export type DashboardType = 'leads-overview' | 'marketing-roi';

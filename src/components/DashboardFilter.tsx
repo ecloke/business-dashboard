@@ -66,7 +66,7 @@ export default function DashboardFilter({ data, onFilterChange, loading = false 
   const totalCount = availableFormTypes.length;
 
   return (
-    <div className="modern-card mb-6" style={{ position: 'relative', overflow: 'visible', zIndex: 10000 }}>
+    <div className="modern-card mb-6" style={{ position: 'relative', overflow: 'visible', zIndex: 1000 }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="text-xl">🎯</div>

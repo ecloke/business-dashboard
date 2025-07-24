@@ -38,7 +38,8 @@
       "Bash(timeout:*)",
       "Bash(rm:*)",
       "Bash(cut:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(git rm:*)"
     ],
     "deny": []
   }

@@ -57,7 +57,17 @@ coverage/
 image*.png
 *.jpg
 *.jpeg
+
+# Data files and debug output - NEVER commit sensitive data
 dashboard-changes.txt
 mapping.txt
 formatted_contacts.json
 initial_data.csv
+*.csv
+*debug*.json
+hubspot_*.json
+*_results.json
+
+# Temporary files
+*.tmp
+*.temp

@@ -65,6 +65,7 @@ formatted_contacts.json
 initial_data.csv
 *.csv
 *debug*.json
+*debug*.ts
 hubspot_*.json
 *_results.json
 

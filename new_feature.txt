@@ -1,0 +1,17 @@
+A brief summary is that, currently i have a google sheet that is already automatically updated, the data from there i can get number of clicks, impressions, amount spent, cost per lead from meta, google and so on. so basically i want to link this and also hubspot data together. 
+
+for the first changes i want to make is that. i want to have a menu to change to different dashboard view, so by default is the one we already have we can called it Leads Overview. 
+
+then i want another one can call it Marketing ROI.
+
+so in this marketing ROI,  few data points i want, which all can be get from either the google sheet or hubspot, each of these data points i want total and also the breakdown by channel
+1. Total spend, and total spend for each channel, which is in the google sheet
+2. total leads generated also can get from the google sheet 
+3. cost per conversion is basically spend/ leads
+4. conversion rate = leads / number of click, clicks can also get from the gsheet
+5. CTR = clicks / impressions, impressions can also get from the gsheet
+6. clicks
+
+So for this dashboard i also want to be able to filter by a date range
+
+i think we can start off with this first. In terms of where to get the data within the gsheet, that we can do later, but at least i want to be able to connect to my gsheet

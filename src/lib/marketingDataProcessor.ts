@@ -39,7 +39,8 @@ export function calculateMarketingMetrics(data: MarketingData[], closedDealsData
     // Each row in closedDealsData represents one closed deal
     closedDeals = closedDealsData.length;
     // Sum up the deal amounts (stored in the spend field for closed deals data)
-    closedDealAmount = closedDealsData.reduce((sum, deal) => sum + (deal.spend || 0), 0);
+    // Convert from RM to SGD by dividing by 3.3
+    closedDealAmount = closedDealsData.reduce((sum, deal) => sum + ((deal.spend || 0) / 3.3), 0);
   }
 
   // Calculate derived metrics
@@ -87,7 +88,18 @@ export function groupByChannel(data: MarketingData[], closedDealsData?: Marketin
   
   if (closedDealsData && closedDealsData.length > 0) {
     closedDealsData.forEach(row => {
-      const channel = normalizeChannelName(row.channel);
+      // Apply channel attribution logic for closed deals
+      let channel: string;
+      
+      // Check if the deal contains "unbounce" (case insensitive)
+      const hasUnbounce = (row.channel || '').toLowerCase().includes('unbounce');
+      
+      if (hasUnbounce) {
+        channel = 'Google Ads'; // Google SEM
+      } else {
+        channel = 'Meta (Facebook)'; // Meta for everything else
+      }
+      
       if (!closedDealsGroups[channel]) {
         closedDealsGroups[channel] = [];
       }

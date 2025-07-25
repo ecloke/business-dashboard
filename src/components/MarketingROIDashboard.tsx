@@ -124,9 +124,13 @@ export default function MarketingROIDashboard({ className }: MarketingROIDashboa
     setDateRange(newRange);
   };
 
-  // Load data when component mounts or date range changes
+  // Debounce date range changes to avoid excessive API calls
   useEffect(() => {
-    loadMarketingData(false);
+    const timeoutId = setTimeout(() => {
+      loadMarketingData(false);
+    }, 500); // Wait 500ms after user stops changing dates
+
+    return () => clearTimeout(timeoutId);
   }, [dateRange]);
 
   if (loading) {

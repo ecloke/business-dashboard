@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { DateRange } from '../lib/types';
 
@@ -19,7 +19,13 @@ const presetRanges = [
 export default function DateRangeFilter({ dateRange, onDateRangeChange, loading = false }: DateRangeFilterProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+  const [tempDateRange, setTempDateRange] = useState<DateRange>(dateRange);
   const buttonRef = useRef<HTMLButtonElement>(null);
+
+  // Update temp date range when props change
+  useEffect(() => {
+    setTempDateRange(dateRange);
+  }, [dateRange]);
 
   const formatDateRange = (range: DateRange) => {
     const start = range.start.toLocaleDateString('en-MY');
@@ -51,11 +57,21 @@ export default function DateRangeFilter({ dateRange, onDateRangeChange, loading 
     const newDate = new Date(value);
     if (type === 'start') {
       newDate.setHours(0, 0, 0, 0);
-      onDateRangeChange({ ...dateRange, start: newDate });
+      setTempDateRange({ ...tempDateRange, start: newDate });
     } else {
       newDate.setHours(23, 59, 59, 999);
-      onDateRangeChange({ ...dateRange, end: newDate });
+      setTempDateRange({ ...tempDateRange, end: newDate });
     }
+  };
+
+  const applyDateRange = () => {
+    onDateRangeChange(tempDateRange);
+    setIsDropdownOpen(false);
+  };
+
+  const cancelDateRange = () => {
+    setTempDateRange(dateRange);
+    setIsDropdownOpen(false);
   };
 
   if (loading) {
@@ -171,7 +187,7 @@ export default function DateRangeFilter({ dateRange, onDateRangeChange, loading 
                     </label>
                     <input
                       type="date"
-                      value={dateRange.start.toISOString().split('T')[0]}
+                      value={tempDateRange.start.toISOString().split('T')[0]}
                       onChange={(e) => handleCustomDateChange('start', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded border"
                       style={{
@@ -187,7 +203,7 @@ export default function DateRangeFilter({ dateRange, onDateRangeChange, loading 
                     </label>
                     <input
                       type="date"
-                      value={dateRange.end.toISOString().split('T')[0]}
+                      value={tempDateRange.end.toISOString().split('T')[0]}
                       onChange={(e) => handleCustomDateChange('end', e.target.value)}
                       className="w-full px-3 py-2 text-sm rounded border"
                       style={{
@@ -196,6 +212,31 @@ export default function DateRangeFilter({ dateRange, onDateRangeChange, loading 
                         color: 'var(--text-primary)'
                       }}
                     />
+                  </div>
+                  
+                  {/* Apply/Cancel buttons */}
+                  <div className="flex gap-2 mt-4 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                    <button
+                      onClick={applyDateRange}
+                      className="flex-1 px-3 py-2 text-sm font-medium text-white rounded-lg transition-all duration-200 hover:transform hover:translateY(-1px)"
+                      style={{
+                        background: 'linear-gradient(135deg, var(--accent-blue), var(--accent-purple))',
+                        border: '1px solid var(--accent-blue)'
+                      }}
+                    >
+                      Apply
+                    </button>
+                    <button
+                      onClick={cancelDateRange}
+                      className="flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:transform hover:translateY(-1px)"
+                      style={{
+                        background: 'var(--bg-glass)',
+                        border: '1px solid var(--border)',
+                        color: 'var(--text-primary)'
+                      }}
+                    >
+                      Cancel
+                    </button>
                   </div>
                 </div>
               </div>

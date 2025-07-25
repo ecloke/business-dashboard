@@ -88,17 +88,8 @@ export function groupByChannel(data: MarketingData[], closedDealsData?: Marketin
   
   if (closedDealsData && closedDealsData.length > 0) {
     closedDealsData.forEach(row => {
-      // Apply channel attribution logic for closed deals
-      let channel: string;
-      
-      // Check if the deal contains "unbounce" (case insensitive)
-      const hasUnbounce = (row.channel || '').toLowerCase().includes('unbounce');
-      
-      if (hasUnbounce) {
-        channel = 'Google Ads'; // Google SEM
-      } else {
-        channel = 'Meta (Facebook)'; // Meta for everything else
-      }
+      // Use the channel that was already determined in googleSheets.ts processing
+      const channel = normalizeChannelName(row.channel);
       
       if (!closedDealsGroups[channel]) {
         closedDealsGroups[channel] = [];

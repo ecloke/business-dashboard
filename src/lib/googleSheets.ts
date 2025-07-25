@@ -200,19 +200,15 @@ function processClosedDealsData(values: any[][]): MarketingData[] {
       }
       
       // Determine channel from source
-      let channel = 'Other';
       const sourceStr = String(source).toLowerCase();
-      if (sourceStr.includes('google') || sourceStr.includes('sem')) {
+      let channel: string;
+      
+      if (sourceStr.includes('unbounce')) {
+        // All Unbounce deals should be attributed to Google SEM
         channel = 'Google Ads';
-      } else if (sourceStr.includes('meta') || sourceStr.includes('facebook')) {
+      } else {
+        // Everything else (including Mobile POS, etc.) goes to Meta
         channel = 'Meta (Facebook)';
-      } else if (sourceStr.includes('unbounce')) {
-        // Check if it's a Google SEM unbounce page
-        if (sourceStr.includes('google sem') || sourceStr.includes('sem')) {
-          channel = 'Google Ads';
-        } else {
-          channel = 'Unbounce LP';
-        }
       }
       
       // Get deal amount

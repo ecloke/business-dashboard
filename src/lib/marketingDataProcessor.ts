@@ -326,6 +326,14 @@ export function processMarketingData(rawData: MarketingData[], dateRange?: DateR
     const channelBreakdown = groupByChannel(marketingData, closedDealsData);
     const channelCount = Object.keys(channelBreakdown).length;
     console.log(`[Marketing Processor] Created breakdown for ${channelCount} channels:`, Object.keys(channelBreakdown));
+    
+    // DEBUG: Show final calculated metrics for each channel
+    console.log(`[DEBUG] ========== FINAL CHANNEL METRICS ==========`);
+    Object.entries(channelBreakdown).forEach(([channel, metrics]) => {
+      console.log(`[DEBUG] ${channel}:`);
+      console.log(`[DEBUG]   Leads: ${metrics.leads}, Clicks: ${metrics.clicks}, Impressions: ${metrics.impressions}, Spend: $${metrics.spend.toFixed(2)}`);
+    });
+    console.log(`[DEBUG] ============================================`);
 
     // Get actual date range from data
     const actualDateRange = getDateRangeSummary(filteredData);

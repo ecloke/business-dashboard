@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { DateRange } from '../lib/types';
+import { getLastNDaysRange, getCurrentMonthRange, getLastMonthRange, formatDateRange } from '../lib/dateUtils';
 
 interface DateRangeFilterProps {
   dateRange: DateRange;
@@ -27,29 +28,21 @@ export default function DateRangeFilter({ dateRange, onDateRangeChange, loading 
     setTempDateRange(dateRange);
   }, [dateRange]);
 
-  const formatDateRange = (range: DateRange) => {
-    const start = range.start.toLocaleDateString('en-MY');
-    const end = range.end.toLocaleDateString('en-MY');
-    return `${start} - ${end}`;
-  };
-
   const handlePresetClick = (preset: typeof presetRanges[0]) => {
-    const now = new Date();
-    let start: Date;
-    let end: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    let dateRange: DateRange;
 
     if (preset.isCurrentMonth) {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+      dateRange = getCurrentMonthRange();
     } else if (preset.isLastMonth) {
-      start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      dateRange = getLastMonthRange();
     } else {
-      start = new Date(now.getTime() - (preset.days * 24 * 60 * 60 * 1000));
-      start.setHours(0, 0, 0, 0);
+      // Use centralized "Last X Days" calculation
+      dateRange = getLastNDaysRange(preset.days);
     }
 
-    onDateRangeChange({ start, end });
+    console.log(`[DateFilter] ${preset.label}: ${dateRange.start.toISOString().split('T')[0]} to ${dateRange.end.toISOString().split('T')[0]}`);
+    
+    onDateRangeChange(dateRange);
     setIsDropdownOpen(false);
   };
 

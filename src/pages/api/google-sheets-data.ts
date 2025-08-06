@@ -49,8 +49,9 @@ export default async function handler(
       const end = new Date(endDate);
       
       if (!isNaN(start.getTime()) && !isNaN(end.getTime())) {
-        start.setHours(0, 0, 0, 0);
-        end.setHours(23, 59, 59, 999);
+        // Use UTC methods to avoid timezone issues
+        start.setUTCHours(0, 0, 0, 0);
+        end.setUTCHours(23, 59, 59, 999);
         dateRange = { start, end };
       }
     }

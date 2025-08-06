@@ -58,13 +58,13 @@ function processMetaSheetData(values: any[][]): MarketingData[] {
   const headers = values[1]; // Headers in row 2
   const data: MarketingData[] = [];
   
-  // Find column indices based on actual headers
-  const dateIdx = headers.findIndex((h: string) => h?.toLowerCase().includes('date'));
-  const clicksIdx = headers.findIndex((h: string) => h?.toLowerCase().includes('clicks'));
-  const impressionsIdx = headers.findIndex((h: string) => h?.toLowerCase().includes('impressions'));
-  const spendIdx = headers.findIndex((h: string) => h?.toLowerCase().includes('amount spent'));
-  const leadsIdx = headers.findIndex((h: string) => h?.toLowerCase().includes('leads'));
-  const ctrIdx = headers.findIndex((h: string) => h?.toLowerCase().includes('ctr'));
+  // Find column indices based on actual headers from Meta Daily Ads Performance Report
+  const dateIdx = headers.findIndex((h: string) => h?.toLowerCase() === 'date');
+  const clicksIdx = headers.findIndex((h: string) => h?.toLowerCase().includes('clicks (all)'));
+  const impressionsIdx = headers.findIndex((h: string) => h?.toLowerCase() === 'impressions');
+  const spendIdx = headers.findIndex((h: string) => h?.toLowerCase() === 'amount spent');
+  const leadsIdx = headers.findIndex((h: string) => h?.toLowerCase() === 'leads');
+  const ctrIdx = headers.findIndex((h: string) => h?.toLowerCase().includes('ctr (all)'));
   
   console.log('[Meta Sheet] Column mapping:', { dateIdx, clicksIdx, impressionsIdx, spendIdx, leadsIdx, ctrIdx });
   
@@ -274,24 +274,24 @@ export async function fetchMarketingData(dateRange?: DateRange): Promise<Marketi
       title: s.properties?.title 
     })));
 
-    // Get the names of sheets 7, 8, and 9 (1-indexed)
-    const sheet7Name = sheetProperties[6]?.properties?.title || 'Sheet7'; // Closed Deals List
-    const sheet8Name = sheetProperties[7]?.properties?.title || 'Sheet8'; // Meta daily ads performance
-    const sheet9Name = sheetProperties[8]?.properties?.title || 'Sheet9'; // Google SEM
+    // Get the correct sheet names based on actual sheet positions
+    const closedDealsSheet = sheetProperties[4]?.properties?.title || 'Closed Deals List'; // Sheet 5 (index 4)
+    const metaSheet = sheetProperties[6]?.properties?.title || 'Meta Daily Ads Performance Report'; // Sheet 7 (index 6) 
+    const googleSheet = sheetProperties[7]?.properties?.title || 'Google SEM Daily Campaign Performance'; // Sheet 8 (index 7)
 
-    console.log(`[Google Sheets] Target sheets: ${sheet7Name}, ${sheet8Name}, ${sheet9Name}`);
+    console.log(`[Google Sheets] Target sheets: ${closedDealsSheet}, ${metaSheet}, ${googleSheet}`);
 
     // Fetch data from all three sheets in parallel
     const allData: MarketingData[] = [];
 
-    // Fetch Meta ads data (Sheet 8)
+    // Fetch Meta ads data (Sheet 7 - Meta Daily Ads Performance Report)
     try {
       await rateLimiter.acquire();
-      console.log(`[Google Sheets] Fetching Meta ads data from ${sheet8Name}...`);
+      console.log(`[Google Sheets] Fetching Meta ads data from ${metaSheet}...`);
       
       const metaResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: `${sheet8Name}!A:Z`, // Get all columns
+        range: `${metaSheet}!A:Z`, // Get all columns
         valueRenderOption: 'UNFORMATTED_VALUE',
         dateTimeRenderOption: 'FORMATTED_STRING'
       });
@@ -302,17 +302,17 @@ export async function fetchMarketingData(dateRange?: DateRange): Promise<Marketi
         allData.push(...metaData);
       }
     } catch (metaError) {
-      console.warn(`[Google Sheets] Error fetching Meta data from ${sheet8Name}:`, metaError);
+      console.warn(`[Google Sheets] Error fetching Meta data from ${metaSheet}:`, metaError);
     }
 
-    // Fetch Google Ads data (Sheet 9)
+    // Fetch Google Ads data (Sheet 8 - Google SEM Daily Campaign Performance)
     try {
       await rateLimiter.acquire();
-      console.log(`[Google Sheets] Fetching Google Ads data from ${sheet9Name}...`);
+      console.log(`[Google Sheets] Fetching Google Ads data from ${googleSheet}...`);
       
       const googleResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: `${sheet9Name}!A:Z`, // Get all columns
+        range: `${googleSheet}!A:Z`, // Get all columns
         valueRenderOption: 'UNFORMATTED_VALUE',
         dateTimeRenderOption: 'FORMATTED_STRING'
       });
@@ -323,17 +323,17 @@ export async function fetchMarketingData(dateRange?: DateRange): Promise<Marketi
         allData.push(...googleData);
       }
     } catch (googleError) {
-      console.warn(`[Google Sheets] Error fetching Google Ads data from ${sheet9Name}:`, googleError);
+      console.warn(`[Google Sheets] Error fetching Google Ads data from ${googleSheet}:`, googleError);
     }
 
-    // Fetch Closed Deals data (Sheet 7) - for additional context
+    // Fetch Closed Deals data (Sheet 5 - Closed Deals List) - for additional context
     try {
       await rateLimiter.acquire();
-      console.log(`[Google Sheets] Fetching Closed Deals data from ${sheet7Name}...`);
+      console.log(`[Google Sheets] Fetching Closed Deals data from ${closedDealsSheet}...`);
       
       const dealsResponse = await sheets.spreadsheets.values.get({
         spreadsheetId,
-        range: `${sheet7Name}!A:Z`, // Get all columns
+        range: `${closedDealsSheet}!A:Z`, // Get all columns
         valueRenderOption: 'UNFORMATTED_VALUE',
         dateTimeRenderOption: 'FORMATTED_STRING'
       });
@@ -345,14 +345,49 @@ export async function fetchMarketingData(dateRange?: DateRange): Promise<Marketi
         allData.push(...dealsData);
       }
     } catch (dealsError) {
-      console.warn(`[Google Sheets] Error fetching Closed Deals data from ${sheet7Name}:`, dealsError);
+      console.warn(`[Google Sheets] Error fetching Closed Deals data from ${closedDealsSheet}:`, dealsError);
     }
 
     console.log(`[Google Sheets] Total processed ${allData.length} marketing records from all sheets`);
 
+    // DEBUG: Show what date range we're filtering with
+    if (dateRange) {
+      console.log(`[DEBUG] FILTERING WITH DATE RANGE:`);
+      console.log(`[DEBUG] Start: ${dateRange.start.toISOString()} (${dateRange.start.toISOString().split('T')[0]})`);
+      console.log(`[DEBUG] End: ${dateRange.end.toISOString()} (${dateRange.end.toISOString().split('T')[0]})`);
+    }
+
     // Filter by date range if provided
     const filteredData = filterDataByDateRange(allData, dateRange);
     console.log(`[Google Sheets] Filtered to ${filteredData.length} records for date range`);
+
+    // DEBUG: Analyze the filtered data by channel
+    const googleData = filteredData.filter(row => row.channel === 'Google Ads');
+    const metaData = filteredData.filter(row => row.channel === 'Meta (Facebook)');
+    
+    console.log(`[DEBUG] ========== FILTERED DATA ANALYSIS ==========`);
+    console.log(`[DEBUG] Google Ads: ${googleData.length} rows`);
+    
+    const googleTotals = googleData.reduce((acc, row) => ({
+      leads: acc.leads + row.leads,
+      clicks: acc.clicks + row.clicks,  
+      impressions: acc.impressions + row.impressions,
+      spend: acc.spend + row.spend
+    }), { leads: 0, clicks: 0, impressions: 0, spend: 0 });
+    
+    console.log(`[DEBUG] Google totals: Leads=${googleTotals.leads}, Clicks=${googleTotals.clicks}, Impressions=${googleTotals.impressions}, Spend=$${googleTotals.spend.toFixed(2)}`);
+    
+    console.log(`[DEBUG] Meta (Facebook): ${metaData.length} rows`);
+    const metaTotals = metaData.reduce((acc, row) => ({
+      leads: acc.leads + row.leads,
+      clicks: acc.clicks + row.clicks,
+      impressions: acc.impressions + row.impressions,
+      spend: acc.spend + row.spend
+    }), { leads: 0, clicks: 0, impressions: 0, spend: 0 });
+    
+    console.log(`[DEBUG] Meta totals: Leads=${metaTotals.leads}, Clicks=${metaTotals.clicks}, Impressions=${metaTotals.impressions}, Spend=$${metaTotals.spend.toFixed(2)}`);
+    
+    console.log(`[DEBUG] ============================================`);
 
     return filteredData;
 

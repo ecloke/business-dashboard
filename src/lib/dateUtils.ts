@@ -83,7 +83,7 @@ export function testDateRanges() {
     if (args.length === 0) {
       return new originalDate(testDate);
     }
-    return new originalDate(...args);
+    return new (originalDate as any)(...args);
   } as any;
   Object.setPrototypeOf(global.Date, originalDate);
   Object.getOwnPropertyNames(originalDate).forEach(prop => {
